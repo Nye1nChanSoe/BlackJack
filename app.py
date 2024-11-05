@@ -1,52 +1,42 @@
 import pygame
-import sys
-from src.card import Card
-from src.card_renderer import CardRenderer
-from src.button import Button
+from src.deck import Deck
+from src.deck_renderer import DeckRenderer
 
-pygame.init()
+def main():
+    # Initialize Pygame
+    pygame.init()
+    screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption('Card Game')
 
-# Set up display
-screen_width, screen_height = 800, 600
-screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption("Card with Renderer and Flip Animation")
+    # Load card back image
+    card_back_image = pygame.image.load('assets/cards/cardback.png')
 
-face_up_image = pygame.image.load('assets/cards/ad.png')
-face_down_image = pygame.image.load('assets/cards/cardback.png')
+    # Create deck and renderer
+    renderer = DeckRenderer(card_back_image=card_back_image, screen=screen)
+    deck = Deck(renderer)
 
-card = Card(
-    rank="Ace", 
-    suit="Diamond", 
-    renderer=CardRenderer(face_up_image, face_down_image),
-    face_up=True
-)
+    # Main game loop
+    running = True
+    while running:
+        screen.fill((0, 128, 0))  # Green background
 
-# Create Buttons
-hit_button = Button("Hit", (600, 400), 100, 50, (0, 255, 0), (0, 0, 0))
-stand_button = Button("Stand", (600, 470), 100, 50, (255, 0, 0), (255, 255, 255))
+        deck.render()  # Render the deck's stack of cards
 
-running = True
-x, y = 350, 225  # Position of the card
-while running:
-    screen.fill((0, 128, 0))  # Green background (like a card table)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:
+                    # Shuffle deck and show shuffle animation
+                    deck.shuffle()
+                elif event.key == pygame.K_d:
+                    # Draw a card and show draw animation
+                    if not deck.is_empty():
+                        deck.draw()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                card.flip(screen, x, y)
-        # Handle button events
-        if hit_button.is_clicked(event):
-            print("Hit button pressed!")  # Placeholder for future logic
-        if stand_button.is_clicked(event):
-            print("Stand button pressed!")  # Placeholder for future logic
+        pygame.display.flip()  # Update display after each frame
 
-    card.render(screen, x, y)  # Render the card
-    hit_button.draw(screen)  # Draw the hit button
-    stand_button.draw(screen)  # Draw the stand button
-    pygame.display.flip()
+    pygame.quit()
 
-# Quit Pygame
-pygame.quit()
-sys.exit()
+if __name__ == '__main__':
+    main()
