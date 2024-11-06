@@ -8,9 +8,10 @@ class Card:
         self.is_hidden = False
         self.card_back = pygame.image.load('assets/cards/cardback.png')
 
-    def flip(self):
+    def flip(self) -> 'Card':
         """flip the card"""
         self.is_hidden = not self.is_hidden
+        return self
 
     def render(self):
         if self.is_hidden:
@@ -18,4 +19,6 @@ class Card:
         return self.image
 
     def __str__(self):
+        if self.is_hidden:
+            return 'Hidden'
         return f'Card {self.rank} {self.suit}'
