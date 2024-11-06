@@ -18,6 +18,11 @@ class Card:
             return self.card_back
         return self.image
 
+    def get_image(self):
+        if self.is_hidden:
+            return self.card_back
+        return self.image
+
     def __str__(self):
         if self.is_hidden:
             return 'Hidden'

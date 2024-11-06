@@ -9,11 +9,13 @@ import pygame
 include all the game logic as well as rendering objects
 """
 class Game:
-    def __init__(self, screen: pygame.Surface):
+    def __init__(self, screen: pygame.Surface, font: pygame.font.Font, debug: bool):
         self.screen = screen
+        self.font = font
         self.deck = Deck()
         self.player = Player('Nyein Chan')
         self.dealer = Dealer()
+        self.debug_mode = debug
         self.init_deck()
         self.init_player()
         self.init_dealer()
@@ -38,24 +40,41 @@ class Game:
         self.render_dealer_hands()
 
     def update_player(self):
-        print(self.player)
+        if self.debug_mode:
+            print(self.player)
 
     def update_dealer(self):
-        print(self.dealer)
+        if self.debug_mode:
+            print(self.dealer)
 
     def render_player_hands(self):
         card_offset = 60
-        x,y = 100, 400
+        x, y = 100, 400
+
+        player_caption = self.font.render(self.player.name, True, (255, 255, 255))
+
         for i, card in enumerate(self.player.hand):
             card_position = (x + i * card_offset, y)
-            self.screen.blit(card.image, card_position)
+            self.screen.blit(card.get_image(), card_position)
+
+        text = f'Hand: {str(self.player.hand_value())}'
+        text_surface = self.font.render(text, True, (255, 255, 255))
+
+        self.screen.blit(player_caption, (x, y - 40))
+        self.screen.blit(text_surface, (x + 10, y + 150))
 
     def render_dealer_hands(self):
         card_offset = 60
-        x,y = 100, 100
+        x, y = 100, 60
+
+        dealer_caption = self.font.render("Dealer", True, (255, 255, 255))
+
         for i, card in enumerate(self.dealer.hand):
             card_position = (x + i * card_offset, y)
-            if not card.is_hidden:
-                self.screen.blit(card.image, card_position)
-            else:
-                self.screen.blit(card.card_back, card_position)
+            self.screen.blit(card.get_image(), card_position)
+
+        text = f'Hand: {str(self.dealer.hand_value())}'
+        text_surface = self.font.render(text, True, (255, 255, 255))
+
+        self.screen.blit(dealer_caption, (x, y - 40))
+        self.screen.blit(text_surface, (x + 10, y + 150))

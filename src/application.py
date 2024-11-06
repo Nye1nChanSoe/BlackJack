@@ -2,14 +2,16 @@ import pygame
 from src.game import Game
 
 class Application:
-    def __init__(self, width: float, height: float, fps: float, caption: str):
+    def __init__(self, width: float, height: float, fps: float, caption: str, debug: bool = True):
         self.screen = pygame.display.set_mode((width, height))
         self.fps = fps
         self.caption = caption
         self.icon = pygame.image.load("assets/icon.png")
         self.running = True
         self.clock = pygame.time.Clock()
-        self.game = Game(self.screen)
+        pygame.font.init()
+        self.font = pygame.font.SysFont('Comic Sans MS', 20)
+        self.game = Game(self.screen, self.font, debug)
 
     def init(self):
         pygame.init()
