@@ -34,7 +34,6 @@ class Deck:
     def reset(self):
         self.cards.clear()
         self.create_cards()
-        self.shuffle()
 
     def __len__(self):
         return len(self.cards)

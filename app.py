@@ -4,7 +4,7 @@ def main():
     app = Application(
         width=800,
         height=600,
-        fps=60,
+        fps=10,
         caption="Black Jack",
         debug=False
     )

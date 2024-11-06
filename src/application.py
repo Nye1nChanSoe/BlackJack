@@ -11,7 +11,7 @@ class Application:
         self.running = True
         self.clock = pygame.time.Clock()
         pygame.font.init()
-        self.font = pygame.font.SysFont('Comic Sans MS', 20)
+        self.font = pygame.font.SysFont('timesnewroman', 20)
         self.game = Game(self.screen, self.font, debug)
 
     def init(self):
