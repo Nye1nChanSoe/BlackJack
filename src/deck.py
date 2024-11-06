@@ -36,6 +36,9 @@ class Deck:
         self.create_cards()
         self.shuffle()
 
+    def __len__(self):
+        return len(self.cards)
+
     def __str__(self):
         cards = ' | '.join(str(card) for card in self.cards)
         return cards

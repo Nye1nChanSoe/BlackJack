@@ -1,10 +1,10 @@
-from .card import Card
 from .deck import Deck
 from .player import Player
 from .dealer import Dealer
 from .button import Button
 from typing import List
 import pygame
+import random
 
 
 """
@@ -24,6 +24,11 @@ class Game:
 
         self.hit_button = Button((560, 500), (80, 40), "Hit", self.font)
         self.stand_button = Button((660, 500), (80, 40), "Stand", self.font)
+
+        # for deck cards rendering
+        self.random_offsets_x = [random.randint(-5, 5) for _ in range(10)]
+        self.random_offsets_y = [random.randint(-5, 5) for _ in range(10)]
+        self.random_rotates = [random.randint(-12, 12) for _ in range(10)]
 
         self.init_deck()
         self.init_player()
@@ -52,6 +57,7 @@ class Game:
         self.render_dealer_hands()
         self.hit_button.draw(self.screen)
         self.stand_button.draw(self.screen)
+        self.render_deck_stack()
 
     def update_player(self, event: pygame.event.Event):
         if self.debug_mode:
@@ -97,3 +103,25 @@ class Game:
 
         self.screen.blit(dealer_caption, (x, y - 40))
         self.screen.blit(text_surface, (x + 10, y + 150))
+
+    def render_deck_stack(self):
+        x, y = 660, 140
+        image = pygame.image.load('assets/cards/cardback.png').convert_alpha()
+        deck_caption = self.font.render(f"Deck: {len(self.deck)}", True, (255, 255, 255))
+        for i in range(10):
+            random_offset_x = self.random_offsets_x[i]
+            random_offset_y = self.random_offsets_y[i]
+            random_rotations = self.random_rotates[i]
+            rotated_image = pygame.transform.rotozoom(image, random_rotations, 1)
+            rotated_rect = rotated_image.get_rect(center=(x + random_offset_x, y + random_offset_y + i * 2))
+            self.screen.blit(rotated_image, rotated_rect.topleft)
+        self.screen.blit(deck_caption, (x - 40, y - 114))
+
+    # without rotation
+    # def render_deck_stack(self):
+    #     card_x, card_y = 660, 140
+    #     image = pygame.image.load('assets/cards/cardback.png')
+    #     for i in range(10):
+    #         random_offset_x = self.random_offsets_x[i]
+    #         random_offset_y = self.random_offsets_y[i]
+    #         self.screen.blit(image, (card_x + random_offset_x, card_y + random_offset_y + i * 2))
