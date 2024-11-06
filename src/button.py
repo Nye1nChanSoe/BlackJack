@@ -28,7 +28,8 @@ class Button:
         text_rect = self.text_surface.get_rect(center=self.rect.center)
         screen.blit(self.text_surface, text_rect)
 
-    def is_clicked(self) -> bool:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
-        mouse_click = pygame.mouse.get_pressed()
-        return self.rect.collidepoint(mouse_x, mouse_y) and mouse_click[0] == 1
+    def is_clicked(self, event: pygame.event.Event) -> bool:
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left click
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            return self.rect.collidepoint(mouse_x, mouse_y)
+        return False

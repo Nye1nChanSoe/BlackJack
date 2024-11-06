@@ -3,6 +3,7 @@ from .deck import Deck
 from .player import Player
 from .dealer import Dealer
 from .button import Button
+from typing import List
 import pygame
 
 
@@ -17,6 +18,9 @@ class Game:
         self.player = Player('Nyein Chan')
         self.dealer = Dealer()
         self.debug_mode = debug
+
+        self.player_turn = True
+        self.dealer_turn = False
 
         self.hit_button = Button((560, 500), (80, 40), "Hit", self.font)
         self.stand_button = Button((660, 500), (80, 40), "Stand", self.font)
@@ -36,22 +40,29 @@ class Game:
         self.dealer.hit(self.deck.draw())
         self.dealer.hit(self.deck.draw().flip())
 
-    def update(self):
-        self.update_player()
-        self.update_dealer()
+    def update(self, events: List[pygame.event.Event]):
+        for event in events:
+            if self.debug_mode:
+                print(event)
+            self.update_player(event)
+            self.update_dealer(event)
 
     def render(self):
         self.render_player_hands()
         self.render_dealer_hands()
-
         self.hit_button.draw(self.screen)
         self.stand_button.draw(self.screen)
 
-    def update_player(self):
+    def update_player(self, event: pygame.event.Event):
         if self.debug_mode:
             print(self.player)
+        if self.hit_button.is_clicked(event):
+            self.player.hit(self.deck.draw())
+        if self.stand_button.is_clicked(event):
+            self.player_turn = False
+            self.dealer_turn = True
 
-    def update_dealer(self):
+    def update_dealer(self, event: pygame.event.Event):
         if self.debug_mode:
             print(self.dealer)
 

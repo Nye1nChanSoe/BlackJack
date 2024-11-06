@@ -1,5 +1,6 @@
 import pygame
 from src.game import Game
+from typing import List
 
 class Application:
     def __init__(self, width: float, height: float, fps: float, caption: str, debug: bool = True):
@@ -19,9 +20,10 @@ class Application:
 
     def run(self):
         while self.running:
-            self.update()
+            events = pygame.event.get()
+            self.update(events)
             self.render()
-            for event in pygame.event.get():
+            for event in events:
                 if event.type == pygame.QUIT:
                     self.exit()
                 if event.type == pygame.KEYDOWN:
@@ -29,8 +31,8 @@ class Application:
                         self.exit()
             self.clock.tick(self.fps)
 
-    def update(self):
-        self.game.update()
+    def update(self, events: List[pygame.event.Event]):
+        self.game.update(events)
 
     def render(self):
         self.screen.fill((0, 100, 0))

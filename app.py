@@ -6,7 +6,7 @@ def main():
         height=600,
         fps=60,
         caption="Black Jack",
-        debug=False
+        debug=True
     )
     app.init()
     app.run()
