@@ -15,8 +15,6 @@ class Player:
         ace_count = 0
 
         for card in self.hand:
-            if card.is_hidden:
-                continue
             if card.rank.isdigit():
                 value += int(card.rank)
             elif card.rank in ['J', 'Q', 'K']:

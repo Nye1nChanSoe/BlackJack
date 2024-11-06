@@ -34,6 +34,7 @@ class Application:
 
     def render(self):
         self.screen.fill((0, 100, 0))
+        # self.screen.fill((0, 0, 0))
         self.game.render()
         pygame.display.flip()
 
