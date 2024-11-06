@@ -9,7 +9,7 @@ class Application:
         self.icon = pygame.image.load("assets/icon.png")
         self.running = True
         self.clock = pygame.time.Clock()
-        self.game = Game()
+        self.game = Game(self.screen)
 
     def init(self):
         pygame.init()
@@ -31,8 +31,8 @@ class Application:
         self.game.update()
 
     def render(self):
-        self.game.render()
         self.screen.fill((0, 0, 0))
+        self.game.render()
         pygame.display.flip()
 
     def exit(self):

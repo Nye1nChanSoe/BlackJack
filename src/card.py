@@ -16,3 +16,6 @@ class Card:
         if self.is_hidden:
             return self.card_back
         return self.image
+
+    def __str__(self):
+        return f'Card {self.rank} {self.suit}'

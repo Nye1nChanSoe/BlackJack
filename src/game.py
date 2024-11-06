@@ -7,14 +7,13 @@ import pygame
 include all the game logic as well as rendering objects
 """
 class Game:
-    def __init__(self):
-        self.card = Card('a', 'd', pygame.image.load('assets/cards/as.png'))
+    def __init__(self, screen: pygame.Surface):
+        self.screen = screen
         self.deck = Deck()
+        self.card = self.deck.draw()
 
     def update(self):
-        if not self.card.is_hidden:
-            self.card.flip()
+        print(self.card)
 
     def render(self):
-        print(f'is card hidden: {self.card.is_hidden}')
-        pass
+        self.screen.blit(self.card.image, (100, 100))
