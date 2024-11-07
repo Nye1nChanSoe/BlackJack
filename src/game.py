@@ -11,7 +11,7 @@ class Game:
         self.screen = screen
         self.font = font
         self.deck = Deck()
-        self.player = Player('Nyein Chan')
+        self.player = Player('Player')
         self.dealer = Dealer()
         self.debug_mode = debug
 
@@ -54,6 +54,7 @@ class Game:
             self.game_over = True
             self.player_won = True
             self.game_result = "Blackjack!"
+            self.win += 1
 
     def update(self, events: List[pygame.event.Event]):
         for event in events:
@@ -65,6 +66,11 @@ class Game:
                     if self.hit_button.is_clicked(event):
                         if len(self.player.hand) < 5:
                             self.player.hit(self.deck.draw())
+                            if self.player.hand_value() == 21:
+                                self.game_over = True
+                                self.player_won = True
+                                self.game_result = "Black Jack!"
+                                self.win += 1
                             if self.player.hand_value() > 21:
                                 self.game_over = True
                                 self.player_won = False
