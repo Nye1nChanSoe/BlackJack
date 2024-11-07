@@ -2,7 +2,7 @@ from .deck import Deck
 from .player import Player
 from .dealer import Dealer
 from .button import Button
-from typing import List
+from typing import List, Tuple
 import pygame
 import random
 
@@ -30,11 +30,9 @@ class Game:
         self.hit_button = Button((340, 550), (80, 36), "Hit", self.font)
         self.stand_button = Button((440, 550), (80, 36), "Stand", self.font)
 
-        self.init_deck()
-        self.init_player()
-        self.init_dealer()
-
-        self.check_initial_blackjack()
+        self.deck_pos = (660, 140)
+        self.player_pos = (100, 400)
+        self.dealer_pos = (100, 60)
 
         self.is_shuffled = False
         self.shuffle_frames = 10
@@ -44,24 +42,47 @@ class Game:
         self.random_offsets_y = [0] * self.random_no_of_cards
         self.random_rotates = [0] * self.random_no_of_cards
 
+        self.card_draws = []
+
+        self.init_deck()
+        self.init_player()
+        self.init_dealer()
+        self.check_initial_blackjack()
 
     def init_deck(self):
         self.deck.shuffle()
 
     def init_player(self):
-        self.player.hit(self.deck.draw())
-        self.player.hit(self.deck.draw())
+        x_offset = 40
+
+        card = self.deck.draw()
+        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 80), card.image)
+        self.player.hit(card=card)
+
+        x_offset += 60
+
+        card = self.deck.draw()
+        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 80), card.image)
+        self.player.hit(card=card)
 
     def init_dealer(self):
-        self.dealer.hit(self.deck.draw())
-        self.dealer.hit(self.deck.draw().flip())
+        x_offset = 40
+
+        card = self.deck.draw()
+        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 70), card.image)
+        self.dealer.hit(card=card)
+
+        x_offset += 60
+
+        card = self.deck.draw().flip()
+        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 70), card.image)
+        self.dealer.hit(card=card)
 
     def check_initial_blackjack(self):
         if self.player.hand_value() == 21:
-            self.game_over = True
-            self.player_won = True
-            self.game_result = "Blackjack!"
-            self.win += 1
+            self.end_game("Blackjack!", True)
+        if self.dealer.hand_value() == 21:
+            self.end_game("Blackjack!", False)
 
     def update(self, events: List[pygame.event.Event]):
         for event in events:
@@ -78,6 +99,7 @@ class Game:
             self.render_shuffle()
         else:
             self.render_deck_stack()
+            self.render_card_draws()
             self.render_player_hands()
             self.render_dealer_hands()
             if self.player_turn and not self.game_over:
@@ -116,9 +138,21 @@ class Game:
                 self.dealer_turn = False
                 self.compare_hands()
 
+    def set_card_draws(self, start_pos: Tuple[float, float], end_pos: Tuple[float, float], image: pygame.Surface):
+        card_data = {
+            'start_pos': start_pos,
+            'end_pos': end_pos,
+            'card_image': image,
+            'x': start_pos[0],
+            'y': start_pos[1],
+            'frames': 20,
+            'frame_counter': 0
+        }
+        self.card_draws.append(card_data)
+
     def render_player_hands(self):
         card_offset = 60
-        x, y = 100, 400
+        x, y = self.player_pos[0], self.player_pos[1]
 
         player_caption = self.font.render(self.player.name, True, (255, 255, 255))
 
@@ -134,7 +168,7 @@ class Game:
 
     def render_dealer_hands(self):
         card_offset = 60
-        x, y = 100, 60
+        x, y = self.dealer_pos[0], self.dealer_pos[1]
 
         dealer_caption = self.font.render("Dealer", True, (255, 255, 255))
 
@@ -168,7 +202,7 @@ class Game:
             self.is_shuffled = True
 
     def render_deck_stack(self):
-        x, y = 660, 140
+        x, y = self.deck_pos[0], self.deck_pos[1]
         image = pygame.image.load('assets/cards/cardback.png').convert_alpha()
         deck_caption = self.font.render(f"Deck: {len(self.deck)}", True, (255, 255, 255))
 
@@ -208,6 +242,19 @@ class Game:
         score_surface = self.font.render(score_text, True, (255, 255, 255))
         score_rect = score_surface.get_rect(bottomright=(self.screen.get_width() - 30, self.screen.get_height() - 20))
         self.screen.blit(score_surface, score_rect)
+
+    def render_card_draws(self):
+        for card_data in self.card_draws[:]:
+            if card_data['frame_counter'] < card_data['frames']:
+                progress = card_data['frame_counter'] / card_data['frames']
+                card_data['x'] = card_data['start_pos'][0] + (card_data['end_pos'][0] - card_data['start_pos'][0]) * progress
+                card_data['y'] = card_data['start_pos'][1] + (card_data['end_pos'][1] - card_data['start_pos'][1]) * progress
+                rotated_image = pygame.transform.rotozoom(card_data['card_image'], 0, 1)
+                rotated_rect = rotated_image.get_rect(center=(card_data['x'], card_data['y']))
+                self.screen.blit(rotated_image, rotated_rect.topleft)
+                card_data['frame_counter'] += 1
+            else:
+                self.card_draws.remove(card_data)
 
     # compare dealer and player's hand
     def compare_hands(self):
@@ -251,9 +298,6 @@ class Game:
         self.player_won = False
         self.game_result = ''
         self.deck.reset()
-        self.init_deck()
-        self.init_player()
-        self.init_dealer()
 
         self.is_shuffled = False
         self.shuffle_frames = 10
@@ -263,3 +307,9 @@ class Game:
         self.random_offsets_y = [0] * self.random_no_of_cards
         self.random_rotates = [0] * self.random_no_of_cards
 
+        self.card_draws.clear()
+
+        self.init_deck()
+        self.init_player()
+        self.init_dealer()
+        self.check_initial_blackjack()
