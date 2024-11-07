@@ -6,6 +6,10 @@ from typing import List
 import pygame
 import random
 
+
+# TODO: card flip animation at the game end
+# TODO: card draw animation for player and dealer
+# TODO: deck shuffle animation (optional)
 class Game:
     def __init__(self, screen: pygame.Surface, font: pygame.font.Font, debug: bool):
         self.screen = screen
@@ -61,79 +65,48 @@ class Game:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r and self.game_over:
                     self.reset()
-            if not self.game_over:
-                if self.player_turn:
-                    if self.hit_button.is_clicked(event):
-                        if len(self.player.hand) < 5:
-                            self.player.hit(self.deck.draw())
-                            if self.player.hand_value() == 21:
-                                self.game_over = True
-                                self.player_won = True
-                                self.game_result = "Black Jack!"
-                                self.win += 1
-                            if self.player.hand_value() > 21:
-                                self.game_over = True
-                                self.player_won = False
-                                self.game_result = "Busted!"
-                                self.lose += 1
-                            elif len(self.player.hand) == 5 and self.player.hand_value() <= 21:
-                                # Player has 5 cards and didn't bust
-                                self.game_over = True
-                                self.player_won = True
-                                self.game_result = "5-Card Charlie!"
-                                self.win += 1
-                    # Player stands
-                    if self.stand_button.is_clicked(event):
-                        self.player_turn = False
-                        self.dealer_turn = True
-                # self.update_player(event)
+            if not self.game_over and self.player_turn:
+                self.update_player(event)
+            else:
                 self.update_dealer(event)
 
     def render(self):
         self.render_player_hands()
+        self.render_deck_stack()
+        self.render_game_result()
+        self.render_score()
         self.render_dealer_hands()
 
         if self.player_turn and not self.game_over:
             self.hit_button.draw(self.screen)
             self.stand_button.draw(self.screen)
 
-        self.render_deck_stack()
-        self.render_game_result()
-        self.render_score()
 
-    # def update_player(self, event: pygame.event.Event):
-    #     if self.player_turn and not self.game_over:
-    #         if self.debug_mode:
-    #             print(self.player)
-    #         if self.hit_button.is_clicked(event):
-    #             if len(self.player.hand) < 5:
-    #                 self.player.hit(self.deck.draw())
-    #                 if self.player.hand_value() > 21:
-    #                     self.game_over = True
-    #                     self.player_won = False
-    #                     self.game_result = "Busted!"
-    #                 elif len(self.player.hand) == 5 and self.player.hand_value() <= 21:
-    #                     # Player has 5 cards and didn't bust
-    #                     self.game_over = True
-    #                     self.player_won = True
-    #                     self.game_result = "5-Card Charlie!"
-    #         # Player stands
-    #         if self.stand_button.is_clicked(event):
-    #             self.player_turn = False
-    #             self.dealer_turn = True
+    def update_player(self, event: pygame.event.Event):
+        if self.hit_button.is_clicked(event) and len(self.player.hand) < 5:
+            self.player.hit(self.deck.draw())
+            player_value = self.player.hand_value()
+
+            if player_value == 21:
+                self.end_game("Blackjack!", True)
+            elif player_value > 21:
+                self.end_game("Busted!", False)
+            elif len(self.player.hand) == 5 and player_value <= 21:
+                self.end_game("5-Card Charlie!", True)
+
+        if self.stand_button.is_clicked(event):
+            self.player_turn = False
+            self.dealer_turn = True
 
     def update_dealer(self, event: pygame.event.Event):
         if self.dealer_turn and not self.game_over:
             if self.debug_mode:
                 print(self.dealer)
-
+            dealer_value = self.dealer.hand_value()
             if len(self.dealer.hand) < 5 and self.dealer.should_draw():
                 self.dealer.hit(self.deck.draw().flip())
-            elif len(self.dealer.hand) == 5 and self.dealer.hand_value() <= 21:
-                self.game_over = True
-                self.player_won = False
-                self.game_result = "You Lose!"
-
+            elif len(self.dealer.hand) == 5 and dealer_value <= 21:
+                self.end_game("You Lose!", False)
             if not self.dealer.should_draw():
                 self.dealer_turn = False
                 self.compare_hands()
@@ -235,6 +208,15 @@ class Game:
         else:
             self.game_over = True
             self.game_result = "It's a Tie!"
+
+    def end_game(self, result: str, player_won: bool):
+        self.game_over = True
+        self.player_won = player_won
+        self.game_result = result
+        if player_won:
+            self.win += 1
+        else:
+            self.lose += 1
 
     def reset(self):
         self.player.reset_hand()

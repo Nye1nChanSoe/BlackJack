@@ -17,6 +17,7 @@ class Application:
     def init(self):
         pygame.init()
         pygame.display.set_caption(self.caption)
+        pygame.display.set_icon(self.icon)
 
     def run(self):
         while self.running:
