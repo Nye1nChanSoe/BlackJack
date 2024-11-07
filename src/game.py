@@ -21,6 +21,8 @@ class Game:
         self.player_won = False
 
         self.game_result = ''
+        self.win = 0
+        self.lose = 0
 
         self.hit_button = Button((340, 550), (80, 36), "Hit", self.font)
         self.stand_button = Button((440, 550), (80, 36), "Stand", self.font)
@@ -67,11 +69,13 @@ class Game:
                                 self.game_over = True
                                 self.player_won = False
                                 self.game_result = "Busted!"
+                                self.lose += 1
                             elif len(self.player.hand) == 5 and self.player.hand_value() <= 21:
                                 # Player has 5 cards and didn't bust
                                 self.game_over = True
                                 self.player_won = True
                                 self.game_result = "5-Card Charlie!"
+                                self.win += 1
                     # Player stands
                     if self.stand_button.is_clicked(event):
                         self.player_turn = False
@@ -89,6 +93,7 @@ class Game:
 
         self.render_deck_stack()
         self.render_game_result()
+        self.render_score()
 
     # def update_player(self, event: pygame.event.Event):
     #     if self.player_turn and not self.game_over:
@@ -194,6 +199,13 @@ class Game:
             restart_message_width = restart_message.get_width()
             self.screen.blit(restart_message, (screen_center_x - (restart_message_width // 2), self.screen.get_height() // 2 + 20))
 
+    def render_score(self):
+        # Render the win and lose tally in the bottom-right corner
+        score_text = f"Wins: {self.win}  |  Losses: {self.lose}"
+        score_surface = self.font.render(score_text, True, (255, 255, 255))
+        score_rect = score_surface.get_rect(bottomright=(self.screen.get_width() - 30, self.screen.get_height() - 20))
+        self.screen.blit(score_surface, score_rect)
+
     # compare dealer and player's hand
     def compare_hands(self):
         player_hand_value = self.player.hand_value()
@@ -203,14 +215,17 @@ class Game:
             self.game_over = True
             self.player_won = True
             self.game_result = "Dealer Busted! You Win!"
+            self.win += 1
         elif player_hand_value > dealer_hand_value:
             self.game_over = True
             self.player_won = True
             self.game_result = "You Win!"
+            self.win += 1
         elif player_hand_value < dealer_hand_value:
             self.game_over = True
             self.player_won = False
             self.game_result = "You Lose!"
+            self.lose += 1
         else:
             self.game_over = True
             self.game_result = "It's a Tie!"
