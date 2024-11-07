@@ -21,15 +21,16 @@ class Application:
     def run(self):
         while self.running:
             events = pygame.event.get()
-            self.update(events)
-            self.render()
             for event in events:
                 if event.type == pygame.QUIT:
                     self.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         self.exit()
+            self.update(events)
+            self.render()
             self.clock.tick(self.fps)
+        pygame.display.quit()
 
     def update(self, events: List[pygame.event.Event]):
         self.game.update(events)
@@ -42,4 +43,3 @@ class Application:
 
     def exit(self):
         self.running = False
-        pygame.display.quit()

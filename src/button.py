@@ -9,7 +9,7 @@ class Button:
             text: str, 
             font: pygame.font.Font,
             color: Tuple[int, int, int] = (255, 255, 255), 
-            hover_color: Tuple[int, int, int] = (200, 200, 200),
+            hover_color: Tuple[int, int, int] = (220, 220, 220),
             border_radius: int = 4
         ):
         self.rect = pygame.Rect(*pos, *size)
