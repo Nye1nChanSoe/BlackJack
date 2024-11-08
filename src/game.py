@@ -5,10 +5,9 @@ from .button import Button
 from typing import List, Tuple
 import pygame
 import random
+import time
 
-# TODO: separate rendering logic to renderer class (optional)
-# TODO: card flip animation at the game end
-# TODO: card draw animation for player and dealer
+
 class Game:
     def __init__(self, screen: pygame.Surface, font: pygame.font.Font, debug: bool):
         self.screen = screen
@@ -22,6 +21,8 @@ class Game:
         self.dealer_turn = False
         self.game_over = False
         self.player_won = False
+        self.waiting_for_animations = False
+        self.show_result = False
 
         self.game_result = ''
         self.win = 0
@@ -43,6 +44,7 @@ class Game:
         self.random_rotates = [0] * self.random_no_of_cards
 
         self.card_draws = []
+        self.delivered_cards = []
 
         self.init_deck()
         self.init_player()
@@ -56,42 +58,49 @@ class Game:
         x_offset = 40
 
         card = self.deck.draw()
-        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 80), card.image)
+        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 66), card.get_image())
         self.player.hit(card=card)
 
         x_offset += 60
 
         card = self.deck.draw()
-        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 80), card.image)
+        self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 66), card.get_image())
         self.player.hit(card=card)
 
     def init_dealer(self):
         x_offset = 40
 
         card = self.deck.draw()
-        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 70), card.image)
+        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 66), card.get_image())
         self.dealer.hit(card=card)
 
         x_offset += 60
 
         card = self.deck.draw().flip()
-        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 70), card.image)
+        self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 66), card.get_image())
         self.dealer.hit(card=card)
 
     def check_initial_blackjack(self):
         if self.player.hand_value() == 21:
+            self.waiting_for_animations = True
             self.end_game("Blackjack!", True)
         if self.dealer.hand_value() == 21:
+            self.waiting_for_animations = True
             self.end_game("Blackjack!", False)
 
     def update(self, events: List[pygame.event.Event]):
+        # Check if all card animations are complete
+        if self.waiting_for_animations and len(self.card_draws) == 0:
+            self.waiting_for_animations = False
+            self.show_result = True
+
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r and self.game_over:
+                if event.key == pygame.K_r and self.game_over and self.show_result:
                     self.reset()
-            if not self.game_over and self.player_turn:
+            if not self.game_over and self.player_turn and not self.waiting_for_animations:
                 self.update_player(event)
-            else:
+            elif not self.waiting_for_animations:
                 self.update_dealer(event)
 
     def render(self):
@@ -102,16 +111,20 @@ class Game:
             self.render_card_draws()
             self.render_player_hands()
             self.render_dealer_hands()
-            if self.player_turn and not self.game_over:
+            if self.player_turn and not self.game_over and not self.waiting_for_animations:
                 self.hit_button.draw(self.screen)
                 self.stand_button.draw(self.screen)
-        if self.game_over:
+        if self.game_over and self.show_result:
             self.render_game_result()
         self.render_score()
 
     def update_player(self, event: pygame.event.Event):
         if self.hit_button.is_clicked(event) and len(self.player.hand) < 5:
-            self.player.hit(self.deck.draw())
+            card = self.deck.draw()
+            x_offset = 40 + (60 * len(self.player.hand))
+            self.set_card_draws(self.deck_pos, (self.player_pos[0] + x_offset, self.player_pos[1] + 66), card.get_image())
+            self.player.hit(card)
+            self.waiting_for_animations = True
             player_value = self.player.hand_value()
 
             if player_value == 21:
@@ -120,18 +133,31 @@ class Game:
                 self.end_game("Busted!", False)
             elif len(self.player.hand) == 5 and player_value <= 21:
                 self.end_game("5-Card Charlie!", True)
-
+        
         if self.stand_button.is_clicked(event):
             self.player_turn = False
             self.dealer_turn = True
+            # Flip the dealer's hidden card
+            if len(self.dealer.hand) >= 2:
+                self.dealer.hand[1].flip()
+                x_offset = 100
+                # Update the card image in delivered_cards
+                for card in self.delivered_cards:
+                    if card['x'] == self.dealer_pos[0] + x_offset and card['y'] == self.dealer_pos[1] + 66:
+                        card['card_image'] = self.dealer.hand[1].get_image()
+                        break
 
     def update_dealer(self, event: pygame.event.Event):
-        if self.dealer_turn and not self.game_over:
+        if self.dealer_turn and not self.game_over and not self.waiting_for_animations:
             if self.debug_mode:
                 print(self.dealer)
             dealer_value = self.dealer.hand_value()
             if len(self.dealer.hand) < 5 and self.dealer.should_draw():
-                self.dealer.hit(self.deck.draw().flip())
+                card = self.deck.draw()
+                x_offset = 40 + (60 * len(self.dealer.hand))
+                self.set_card_draws(self.deck_pos, (self.dealer_pos[0] + x_offset, self.dealer_pos[1] + 66), card.get_image())
+                self.dealer.hit(card)
+                self.waiting_for_animations = True
             elif len(self.dealer.hand) == 5 and dealer_value <= 21:
                 self.end_game("You Lose!", False)
             if not self.dealer.should_draw():
@@ -139,14 +165,16 @@ class Game:
                 self.compare_hands()
 
     def set_card_draws(self, start_pos: Tuple[float, float], end_pos: Tuple[float, float], image: pygame.Surface):
+        delay = len(self.card_draws) * 2.5
         card_data = {
             'start_pos': start_pos,
             'end_pos': end_pos,
             'card_image': image,
             'x': start_pos[0],
             'y': start_pos[1],
-            'frames': 20,
-            'frame_counter': 0
+            'frames': 10,   # 16 frame is optimal
+            'frame_counter': 0,
+            'start_time': time.time() + delay
         }
         self.card_draws.append(card_data)
 
@@ -155,34 +183,24 @@ class Game:
         x, y = self.player_pos[0], self.player_pos[1]
 
         player_caption = self.font.render(self.player.name, True, (255, 255, 255))
-
-        for i, card in enumerate(self.player.hand):
-            card_position = (x + i * card_offset, y)
-            self.screen.blit(card.get_image(), card_position)
-
-        text = f'Hand: {str(self.player.hand_value())}'
-        text_surface = self.font.render(text, True, (255, 255, 255))
-
         self.screen.blit(player_caption, (x, y - 40))
-        self.screen.blit(text_surface, (x + 10, y + 150))
+
+        if len(self.delivered_cards) >= 2:
+            text = f'Hand: {str(self.player.hand_value())}'
+            text_surface = self.font.render(text, True, (255, 255, 255))
+            self.screen.blit(text_surface, (x + 10, y + 150))
 
     def render_dealer_hands(self):
         card_offset = 60
         x, y = self.dealer_pos[0], self.dealer_pos[1]
 
         dealer_caption = self.font.render("Dealer", True, (255, 255, 255))
-
-        for i, card in enumerate(self.dealer.hand):
-            if self.game_over and card.is_hidden:
-                card.flip()
-            card_position = (x + i * card_offset, y)
-            self.screen.blit(card.get_image(), card_position)
-
-        text = f'Hand: {str(self.dealer.show_hand_value())}'
-        text_surface = self.font.render(text, True, (255, 255, 255))
-
         self.screen.blit(dealer_caption, (x, y - 40))
-        self.screen.blit(text_surface, (x + 10, y + 150))
+
+        if len(self.delivered_cards) >= 4:
+            text = f'Hand: {str(self.dealer.show_hand_value())}'
+            text_surface = self.font.render(text, True, (255, 255, 255))
+            self.screen.blit(text_surface, (x + 10, y + 150))
 
     def render_shuffle(self):
         x, y = 660, 140
@@ -244,17 +262,30 @@ class Game:
         self.screen.blit(score_surface, score_rect)
 
     def render_card_draws(self):
+        current_time = time.time()
+        for card in self.delivered_cards:
+            rotated_image = pygame.transform.rotozoom(card['card_image'], 0, 1)
+            rotated_rect = rotated_image.get_rect(center=(card['x'], card['y']))
+            self.screen.blit(rotated_image, rotated_rect.topleft)
         for card_data in self.card_draws[:]:
-            if card_data['frame_counter'] < card_data['frames']:
-                progress = card_data['frame_counter'] / card_data['frames']
-                card_data['x'] = card_data['start_pos'][0] + (card_data['end_pos'][0] - card_data['start_pos'][0]) * progress
-                card_data['y'] = card_data['start_pos'][1] + (card_data['end_pos'][1] - card_data['start_pos'][1]) * progress
-                rotated_image = pygame.transform.rotozoom(card_data['card_image'], 0, 1)
-                rotated_rect = rotated_image.get_rect(center=(card_data['x'], card_data['y']))
-                self.screen.blit(rotated_image, rotated_rect.topleft)
-                card_data['frame_counter'] += 1
-            else:
-                self.card_draws.remove(card_data)
+            if current_time >= card_data['start_time']:
+                if card_data['frame_counter'] < card_data['frames']:
+                    progress = card_data['frame_counter'] / card_data['frames']
+                    card_data['x'] = card_data['start_pos'][0] + (card_data['end_pos'][0] - card_data['start_pos'][0]) * progress
+                    card_data['y'] = card_data['start_pos'][1] + (card_data['end_pos'][1] - card_data['start_pos'][1]) * progress
+                    rotated_image = pygame.transform.rotozoom(card_data['card_image'], 0, 1)
+                    rotated_rect = rotated_image.get_rect(center=(card_data['x'], card_data['y']))
+                    self.screen.blit(rotated_image, rotated_rect.topleft)
+                    card_data['frame_counter'] += 1
+                else:
+                    delivered_card = {
+                        'card_image': card_data['card_image'],
+                        'x': card_data['end_pos'][0],
+                        'y': card_data['end_pos'][1]
+                    }
+                    self.delivered_cards.append(delivered_card)
+                    self.card_draws.remove(card_data)
+        self.cards_reached = len(self.card_draws) == 0
 
     # compare dealer and player's hand
     def compare_hands(self):
@@ -284,6 +315,7 @@ class Game:
         self.game_over = True
         self.player_won = player_won
         self.game_result = result
+        self.waiting_for_animations = True
         if player_won:
             self.win += 1
         else:
@@ -296,6 +328,8 @@ class Game:
         self.dealer_turn = False
         self.game_over = False
         self.player_won = False
+        self.waiting_for_animations = False
+        self.show_result = False
         self.game_result = ''
         self.deck.reset()
 
@@ -308,6 +342,7 @@ class Game:
         self.random_rotates = [0] * self.random_no_of_cards
 
         self.card_draws.clear()
+        self.delivered_cards.clear()
 
         self.init_deck()
         self.init_player()
