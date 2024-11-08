@@ -133,7 +133,7 @@ class Game:
                 self.end_game("Busted!", False)
             elif len(self.player.hand) == 5 and player_value <= 21:
                 self.end_game("5-Card Charlie!", True)
-        
+
         if self.stand_button.is_clicked(event):
             self.player_turn = False
             self.dealer_turn = True
@@ -165,7 +165,7 @@ class Game:
                 self.compare_hands()
 
     def set_card_draws(self, start_pos: Tuple[float, float], end_pos: Tuple[float, float], image: pygame.Surface):
-        delay = len(self.card_draws) * 2.5
+        delay = len(self.card_draws) * 1.8
         card_data = {
             'start_pos': start_pos,
             'end_pos': end_pos,
